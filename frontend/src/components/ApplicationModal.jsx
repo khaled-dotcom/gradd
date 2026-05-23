@@ -93,8 +93,13 @@ const ApplicationModal = ({ job, isOpen, onClose, onSuccess }) => {
         );
         
         setProgress(75);
-        setExtractedInfo(response.data.extracted_info);
-        setStep(3); // Show review step
+        if (response.data.status === 'processing_cv') {
+          toast.success('Application submitted. CV is being processed in the background.');
+          setExtractedInfo({ processing_cv: true, application_id: response.data.application_id });
+        } else {
+          setExtractedInfo(response.data.extracted_info);
+        }
+        setStep(3);
       } else {
         // Manual entry - create extracted info from form data
         setProgress(50);

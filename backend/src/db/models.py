@@ -109,6 +109,18 @@ class Job(Base):
     company_id = Column(Integer, ForeignKey('companies.id'), nullable=True)
     location_id = Column(Integer, ForeignKey('locations.id'), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    # Data warehouse / external ingest (see data-engineering/)
+    source = Column(String(50), nullable=True, index=True)
+    external_id = Column(String(255), nullable=True, index=True)
+    source_url = Column(String(1000), nullable=True)
+    content_hash = Column(String(64), nullable=True)
+    country = Column(String(100), nullable=True, default="Egypt")
+    city = Column(String(100), nullable=True)
+    is_accessible_focus = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    last_seen_at = Column(DateTime, nullable=True)
+    imported_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
     
     company = relationship("Company")
     location = relationship("Location")
@@ -125,6 +137,22 @@ class Job(Base):
     @property
     def posted_at(self):
         return self.created_at
+
+
+class ImportRun(Base):
+    """Audit log for data-engineering pipeline runs (Airflow / Spark)."""
+    __tablename__ = "import_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    run_id = Column(String(64), unique=True, nullable=False, index=True)
+    source = Column(String(50), nullable=True)
+    status = Column(String(20), default="running")
+    added = Column(Integer, default=0)
+    jobs_updated = Column("updated", Integer, default=0)
+    deactivated = Column(Integer, default=0)
+    errors = Column(Text, nullable=True)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    finished_at = Column(DateTime, nullable=True)
 
 
 class JobRequirement(Base):

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Moon, Sun, LogOut, User, Briefcase, MessageSquare, Home, Wrench, Shield, Sparkles } from 'lucide-react';
+import { Moon, Sun, LogOut, User, Briefcase, MessageSquare, Home, Wrench, Shield, Sparkles, Heart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const Navbar = () => {
@@ -46,6 +46,20 @@ const Navbar = () => {
                 >
                   <Home className="h-4 w-4" aria-hidden="true" />
                   <span>Home</span>
+                </Link>
+                <Link
+                  to="/accessible-jobs"
+                  className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-accent"
+                  aria-label="Accessible and inclusive jobs"
+                >
+                  <Heart className="h-4 w-4" aria-hidden="true" />
+                  <span>Accessible Jobs</span>
+                </Link>
+                <Link
+                  to="/how-it-works"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  How it works
                 </Link>
                 <Link
                   to="/profile"

@@ -198,6 +198,45 @@ def calculate_relevance_score(job: models.Job, query: str, user_profile: Optiona
     return min(score, 1.0)
 
 
+def _active_filter():
+    return or_(models.Job.is_active == True, models.Job.is_active.is_(None))
+
+
+def _job_to_dict(job: models.Job, score: Optional[float] = None) -> Dict:
+    requirements = [req.requirement for req in job.requirements]
+    disability_support = [d.name for d in job.disabilities]
+    out = {
+        "id": job.id,
+        "title": job.title,
+        "description": job.description,
+        "company_name": job.company.name if job.company else None,
+        "company_id": job.company_id,
+        "location_city": job.location.city if job.location else job.city,
+        "location_country": job.location.country if job.location else job.country,
+        "location": None,
+        "employment_type": job.employment_type,
+        "remote_type": job.remote_type,
+        "required_skills": requirements,
+        "disability_support": disability_support,
+        "posted_at": job.posted_at.isoformat() if job.posted_at else None,
+        "source": job.source,
+        "external_id": job.external_id,
+        "source_url": None,
+        "apply_on_site_only": True,
+        "country": job.country,
+        "city": job.city,
+        "is_accessible_focus": bool(job.is_accessible_focus),
+        "is_active": bool(job.is_active) if job.is_active is not None else True,
+    }
+    if job.location:
+        out["location"] = f"{job.location.city}, {job.location.country}"
+    elif job.city:
+        out["location"] = f"{job.city}, {job.country or 'Egypt'}"
+    if score is not None:
+        out["relevance_score"] = round(score, 2)
+    return out
+
+
 def intelligent_job_search(
     db: Session,
     query: Optional[str] = None,
@@ -205,6 +244,7 @@ def intelligent_job_search(
     skill_ids: Optional[List[int]] = None,
     employment_type: Optional[str] = None,
     remote_type: Optional[str] = None,
+    accessible_only: bool = False,
     user_profile: Optional[Dict] = None,
     limit: int = 20,
 ) -> List[Dict]:
@@ -225,7 +265,9 @@ def intelligent_job_search(
     # If no query and no filters, return ALL jobs (when "All" is selected)
     if not has_query and not has_filters:
         # Return all jobs when no filters selected
-        job_query = db.query(models.Job)
+        job_query = db.query(models.Job).filter(_active_filter())
+        if accessible_only:
+            job_query = job_query.filter(models.Job.is_accessible_focus == True)
         jobs = job_query.limit(limit * 2).all()
         
         # Score all jobs (they'll all get similar scores)
@@ -239,32 +281,12 @@ def intelligent_job_search(
         top_jobs = jobs_with_scores[:limit]
         
         # Format results
-        results = []
-        for job, score in top_jobs:
-            requirements = [req.requirement for req in job.requirements]
-            disability_support = [d.name for d in job.disabilities_supported]
-            
-            results.append({
-                "id": job.id,
-                "title": job.title,
-                "description": job.description,
-                "company_name": job.company.name if job.company else None,
-                "company_id": job.company_id,
-                "location_city": job.location.city if job.location else None,
-                "location_country": job.location.country if job.location else None,
-                "location": f"{job.location.city}, {job.location.country}" if job.location else None,
-                "employment_type": job.employment_type,
-                "remote_type": job.remote_type,
-                "required_skills": requirements,
-                "disability_support": disability_support,
-                "posted_at": job.posted_at.isoformat() if job.posted_at else None,
-                "relevance_score": round(score, 2),
-            })
-        
-        return results
+        return [_job_to_dict(job, score) for job, score in top_jobs]
     
     # Start with base query
-    job_query = db.query(models.Job)
+    job_query = db.query(models.Job).filter(_active_filter())
+    if accessible_only:
+        job_query = job_query.filter(models.Job.is_accessible_focus == True)
     
     # Apply filters
     if disability_ids:
@@ -348,29 +370,7 @@ def intelligent_job_search(
     top_jobs = jobs_with_scores[:limit]
     
     # Format results
-    results = []
-    for job, score in top_jobs:
-        requirements = [req.requirement for req in job.requirements]
-        disability_support = [d.name for d in job.disabilities_supported]
-        
-        results.append({
-            "id": job.id,
-            "title": job.title,
-            "description": job.description,
-            "company_name": job.company.name if job.company else None,
-            "company_id": job.company_id,
-            "location_city": job.location.city if job.location else None,
-            "location_country": job.location.country if job.location else None,
-            "location": f"{job.location.city}, {job.location.country}" if job.location else None,
-            "employment_type": job.employment_type,
-            "remote_type": job.remote_type,
-            "required_skills": requirements,
-            "disability_support": disability_support,
-            "posted_at": job.posted_at.isoformat() if job.posted_at else None,
-            "relevance_score": round(score, 2),  # Include relevance score
-        })
-    
-    return results
+    return [_job_to_dict(job, score) for job, score in top_jobs]
 
 
 def filter_jobs_for_chat(jobs: List[Dict], user_message: str, user_profile: Optional[Dict] = None) -> List[Dict]:

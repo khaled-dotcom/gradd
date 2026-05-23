@@ -3,6 +3,7 @@ import { Send, Bot, User, Mic, MicOff, Volume2 } from 'lucide-react';
 import { chatAPI, handleAPIError } from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { speakText } from '../utils/accessibility';
 
 const ChatBox = () => {
   const { user } = useAuth();
@@ -88,33 +89,48 @@ const ChatBox = () => {
     }
   };
 
-  const speakText = (text) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
+  const handleSpeakText = (text) => {
+    if (!speakText(text)) {
       toast.error('Text-to-speech is not supported in this browser.');
-      return;
     }
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    window.speechSynthesis.speak(utterance);
   };
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
-    const userMessage = { role: 'user', content: input };
+    const text = input.trim();
+    const userMessage = { role: 'user', content: text };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
     try {
-      const response = await chatAPI.sendMessage({
-        user_id: user?.id,
-        message: input,
-      });
+      let answer = '';
+      if (chatAPI.eventsEnabled) {
+        const queued = await chatAPI.sendMessageAsync({
+          user_id: user?.id,
+          message: text,
+        });
+        const result = await chatAPI.pollChatResult(queued.data.task_id);
+        if (result.status === 'failed') {
+          throw new Error(result.error || 'Chat processing failed');
+        }
+        answer = result.answer || 'No response received';
+      } else {
+        const response = await chatAPI.sendMessage({
+          user_id: user?.id,
+          message: text,
+        });
+        answer =
+          response.data.answer ||
+          response.data.response ||
+          response.data.message ||
+          'No response received';
+      }
 
       const botMessage = {
         role: 'assistant',
-        content: response.data.answer || response.data.response || response.data.message || 'No response received',
+        content: answer,
       };
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -190,7 +206,7 @@ const ChatBox = () => {
               {msg.role === 'assistant' && (
                 <button
                   type="button"
-                  onClick={() => speakText(msg.content)}
+                  onClick={() => handleSpeakText(msg.content)}
                   className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300"
                   aria-label="Read message aloud"
                 >

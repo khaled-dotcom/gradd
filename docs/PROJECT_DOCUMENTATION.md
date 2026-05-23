@@ -37,6 +37,16 @@ EmpowerWork addresses the critical challenge of employment accessibility for peo
 
 ## Chapter 4: System Design
 
+### 4.0. Event-Driven Layer (Kafka + Spark)
+
+Optional thesis/demo stack documented in **[KAFKA_SPARK.md](architecture/KAFKA_SPARK.md)**:
+
+- **Kafka**: `application.events`, `job.events`, `chat.events` for async CV parsing, Chroma indexing, and chat workers
+- **Redis**: chat task status for `POST /chat/async` + polling
+- **Spark**: batch job `backend/spark_jobs/analytics_daily.py` on JSONL event lake → admin dashboard
+
+Set `EVENTS_ENABLED=true` and run `docker compose -f docker-compose.events.yml up -d`.
+
 ### 4.1. Sequence Diagrams
 
 #### 4.1.1. User Registration Sequence

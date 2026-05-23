@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Users, Briefcase, Building2, FileText, TrendingUp, Shield, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
-import { userAPI, jobAPI, companyAPI, applicationAPI, securityAPI } from '../api/api';
+import { userAPI, jobAPI, companyAPI, applicationAPI, securityAPI, analyticsAPI } from '../api/api';
 import { handleAPIError } from '../api/api';
 
 const AdminDashboard = () => {
@@ -20,6 +20,7 @@ const AdminDashboard = () => {
     blocked_attempts: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [sparkReport, setSparkReport] = useState(null);
 
   useEffect(() => {
     if (!user || !isAdmin()) {
@@ -50,6 +51,12 @@ const AdminDashboard = () => {
         critical_logs: securityRes.data?.critical_logs || 0,
         blocked_attempts: securityRes.data?.blocked_attempts || 0,
       });
+      try {
+        const sparkRes = await analyticsAPI.getSparkReport();
+        setSparkReport(sparkRes.data);
+      } catch {
+        setSparkReport(null);
+      }
     } catch (error) {
       handleAPIError(error);
     } finally {
@@ -182,6 +189,38 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
+
+        {sparkReport && (
+          <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-accent" />
+              Event Analytics (Kafka → Spark)
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Generated: {sparkReport.generated_at} • Engine: {sparkReport.engine || 'batch'}
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{sparkReport.total_events ?? 0}</p>
+                <p className="text-xs text-gray-500">Total events</p>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{sparkReport.chat_events_total ?? 0}</p>
+                <p className="text-xs text-gray-500">Chat events</p>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{sparkReport.application_events_total ?? 0}</p>
+                <p className="text-xs text-gray-500">Application events</p>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {(sparkReport.top_jobs_applied && sparkReport.top_jobs_applied[0]?.count) || 0}
+                </p>
+                <p className="text-xs text-gray-500">Top job applications</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Quick Actions - Enhanced */}

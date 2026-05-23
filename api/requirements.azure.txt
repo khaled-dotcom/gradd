@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pymysql
+python-dotenv
+openai
+chromadb
+groq
+werkzeug
+python-multipart
+PyPDF2
+cryptography
+reportlab
+redis
+pandas
+opencv-python-headless
+azure-storage-blob

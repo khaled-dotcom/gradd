@@ -1,175 +1,76 @@
-# EmpowerWork - Job Assistance Platform for People with Disabilities
+# EmpowerWork — Job Assistance Platform
 
-## 🚀 Live Demo
-🟢 **Frontend Website:** [👉 Click Here to view the Live Website!](https://mt-new-yc7d.vercel.app/)
-⚙️ **Backend API Docs:** [👉 Click Here for Live API Docs](https://mt-new-sigma.vercel.app/docs)
+Inclusive job platform for people with disabilities: smart search, CV applications, AI chat, and Egypt software-job imports.
 
-*Note: This platform is fully deployed on Vercel and connected to a live cloud MySQL Database.*
+## Live (Azure)
 
-## 🎯 Project Overview
+| Service | URL |
+|---------|-----|
+| Frontend | https://ewsw55166st.z1.web.core.windows.net/ |
+| API | https://ewsw55166api.azurewebsites.net |
+| API health | https://ewsw55166api.azurewebsites.net/health |
 
-EmpowerWork is a comprehensive job assistance platform designed specifically for people with disabilities. It provides intelligent job matching, personalized recommendations, assistive tools, an AI-powered chatbot, and accessibility-first UI to support inclusive employment.
-
-## 👥 Project Team
-- **Rawan Mohamed Farouk**
-- **Khaled Ghalwash**
-- **Mohamed Gamal**
-- **Mohamed Hassen**
-- **Mazen Hossam**
-- **Nadeen Ehab**
-
-## 🏗️ Project Structure
+## Project layout
 
 ```
-k-main/
-├── README.md                 # This file - Main project documentation
-├── requirements.txt          # Python dependencies
-├── .env                      # Environment variables (create from .env.example)
-├── docs/                     # All project documentation
-│   ├── setup/               # Setup guides
-│   ├── features/            # Feature documentation
-│   └── guides/              # User and admin guides
-├── backend/                 # FastAPI Backend
-│   ├── src/                # Source code
-│   │   ├── main.py        # FastAPI application entry point
-│   │   ├── config.py      # Configuration settings
-│   │   ├── db/            # Database models and connection
-│   │   ├── routes/        # API route handlers
-│   │   ├── rag/           # RAG chatbot implementation
-│   │   └── utils/         # Utility functions
-│   └── scripts/            # Database scripts
-│       ├── migrations/    # Database migration scripts
-│       └── seeds/         # Data seeding scripts
-├── frontend/               # React Frontend
-│   ├── src/               # Source code
-│   │   ├── components/    # React components
-│   │   ├── pages/         # Page components
-│   │   ├── api/           # API client
-│   │   ├── context/       # React context providers
-│   │   └── utils/         # Utility functions
-│   └── public/            # Static assets
-└── uploads/               # User uploads (profiles, CVs)
-    ├── profiles/          # Profile photos
-    └── cvs/               # CV files
+MT-NEW-main/
+├── backend/              # FastAPI API
+├── frontend/             # React (Vite)
+├── data-engineering/     # Scrape Wuzzuf · Forasna · LinkedIn → MySQL
+│   ├── connectors/
+│   ├── pipeline/         # extract → transform → load
+│   └── dags/             # Airflow (every 8h)
+├── scripts/              # Azure deploy & start
+├── docs/                 # Documentation
+├── api/ + app.py         # Azure App Service entry
+└── requirements.txt
 ```
 
-## 🚀 Quick Start
+## Quick start (local)
 
-### Prerequisites
-- Python 3.8+
-- Node.js 16+
-- XAMPP (MySQL/MariaDB)
-- MySQL running on localhost
+```powershell
+pip install -r requirements.txt
+cd frontend && npm ci && npm run dev
 
-### Backend Setup
+# Backend (repo root)
+python -m uvicorn app:app --reload --port 8000
+```
 
-1. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+Copy `.env.azure.example` → `.env` and set `DB_*`, `GROQ_API_KEY`.
 
-2. **Configure Environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings
-   ```
+## Azure
 
-3. **Run Migrations**
-   ```bash
-   python backend/scripts/migrations/migrate_disabilities.py
-   python backend/scripts/migrations/migrate_tools.py
-   ```
+```powershell
+.\scripts\azure-start.ps1
+.\scripts\azure-deploy-frontend-storage.ps1
+powershell -File scripts/build-azure-zip.ps1
+az webapp deploy -g rg-empowerwork -n ewsw55166api --src-path deploy.zip --type zip
+```
 
-4. **Seed Database**
-   ```bash
-   python backend/scripts/seeds/seed_disabilities.py
-   python backend/scripts/seeds/seed_assistive_tools.py
-   python backend/scripts/seeds/seed_jobs.py
-   ```
+See [docs/azure/DEPLOYMENT.md](docs/azure/DEPLOYMENT.md).
 
-5. **Start Backend**
-   ```bash
-   uvicorn backend.src.main:app --reload --host 0.0.0.0 --port 8000
-   ```
+## Jobs pipeline (software / Egypt)
 
-### Frontend Setup (React + Vite)
+```powershell
+python data-engineering/pipeline/run.py
+```
 
-1. **Install Dependencies**
-   ```bash
-   cd frontend
-   npm install
-   ```
+- Schedule: every **8 hours** via Airflow — `.\scripts\azure-airflow-start.ps1` then unpause DAG `empowerwork_software_jobs_pipeline`
+- Admin manual import: **Admin → Jobs → Run import now** (admin login only)
 
-2. **Start Development Server**
-   ```bash
-   npm run dev
-   ```
+Details: [data-engineering/docs/PIPELINE.md](data-engineering/docs/PIPELINE.md)
 
-3. **Access Application**
-   - Frontend: `http://localhost:3000`
-   - Backend API: `http://localhost:8000`
-   - API Docs: `http://localhost:8000/docs`
+## Admin
 
-> **Note**: Make sure MySQL is running in XAMPP and `.env` is configured (copied from `env.khaled` without committing secrets to Git).
+- Login: `admin@test.com` (set via `python backend/scripts/create_admin_user.py`)
+- Dashboard: `/admin`
 
-## 📚 Documentation
+## Docs
 
-- **[Setup Guide](docs/setup/)** - Installation and configuration
-- **[Features](docs/features/)** - Feature documentation
-- **[User Guides](docs/guides/)** - User and admin guides
+- [docs/RUN_COMMANDS.md](docs/RUN_COMMANDS.md) — commands
+- [data-engineering/docs/DATA_MODEL.md](data-engineering/docs/DATA_MODEL.md) — warehouse schema
+- [docs/features/ACCESSIBILITY_FEATURES.md](docs/features/ACCESSIBILITY_FEATURES.md) — accessibility
 
-## 🛠️ Technologies
+## Team
 
-### Backend
-- **FastAPI** - Modern Python web framework
-- **SQLAlchemy** - ORM for database operations
-- **MySQL/MariaDB** - Database (via XAMPP)
-- **Groq** - LLM for intelligent chatbot
-- **OpenAI** - Embeddings for semantic search
-- **Werkzeug** - Password hashing
-- **PyPDF2** - PDF processing
-
-### Frontend
-- **React.js** - UI framework
-- **TailwindCSS** - Utility-first CSS
-- **React Router** - Navigation
-- **Axios** - HTTP client
-- **React Hot Toast** - Notifications
-- **Lucide React** - Icons
-
-### AI & Intelligence
-- **Groq Whisper (whisper-large-v3-turbo)** - Speech-to-text for voice input
-- **Groq LLM** - Personalized job recommendations in the chatbot
-- **OpenAI Embeddings** - Semantic search and future vector search
-- **ChromaDB** - Vector store (for RAG and semantic retrieval)
-
-## ✨ Key Features
-
-- **Intelligent Job Matching** - AI-powered job recommendations based on disabilities
-- **Disability Management** - Comprehensive disability system with 25+ types
-- **Assistive Tools** - 24+ tools and resources for various disabilities
-- **Accessible Design** - WCAG AA compliant with accessibility controls
-- **Admin Dashboard** - Complete admin interface for managing the platform
-- **Chatbot Assistant** - Intelligent chatbot with disability-aware recommendations
-- **Application System** - Job application tracking with CV processing
-- **Voice Interaction** - Speech-to-text for sending messages and text-to-speech for reading chatbot replies
-
-## 🔐 Security Features
-
-- Password hashing (Werkzeug)
-- Input sanitization and validation
-- Rate limiting
-- SQL injection prevention
-- XSS protection
-- CORS configuration
-
-## 📝 License
-
-This project is proprietary software.
-
-## 📩 Support & Contact
-
-For issues and questions, please refer to the documentation in the `docs/` folder.
-
-For academic or technical inquiries about this graduation project, please contact the project team (Khaled Ghalwash). 
-# gradd
+Rawan Mohamed Farouk · Khaled Ghalwash · Mohamed Gamal · Mohamed Hassen · Mazen Hossam · Nadeen Ehab

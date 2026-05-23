@@ -4,7 +4,7 @@ sqlalchemy
 pymysql
 python-dotenv
 openai
-chromadb-client
+chromadb
 groq
 werkzeug
 python-multipart
@@ -12,5 +12,9 @@ PyPDF2
 cryptography
 reportlab
 python-multipart
+kafka-python
+redis
+pandas
+pyspark
 
 opencv-python-headless

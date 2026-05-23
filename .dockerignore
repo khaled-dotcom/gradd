@@ -1,0 +1,16 @@
+sign_language/
+frontend/
+node_modules/
+.git/
+.chroma/
+data/
+uploads/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.azure.example
+.cursor/
+terminals/
+public/
+agent-transcripts/

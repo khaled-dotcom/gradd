@@ -1,15 +1,43 @@
+# Dependencies & build
 node_modules/
+frontend/dist/
+dist/
+build/
+deploy_staging/
+deploy.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets & local env
 .env
 .env.*
 !.env.example
-dist
-build
-coverage
-.DS_Store
-__pycache__/
-*.pyc
+!.env.azure.example
+azure-deploy-output.env
+azure-deploy-state.json
+
+# Data pipeline artifacts (regenerate via pipeline)
+data/lake/**
+!data/lake/.gitkeep
+data/reports/*.json
+!data/reports/.gitkeep
+
+# App runtime
 .chroma/
 uploads/
 *.log
-.venv/
-venv/
+backend_output.txt
+
+# Removed / legacy (do not re-add)
+sign_language/
+public/
+azure-logs*/
+package-lock.json
+
+# OS
+.DS_Store
+coverage/

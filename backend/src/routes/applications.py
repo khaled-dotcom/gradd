@@ -9,16 +9,31 @@ import os
 import shutil
 import json
 from datetime import datetime
+from io import BytesIO
 
 from backend.src.db.database import get_db
 from backend.src.db import models
 from backend.src.utils.pdf_extractor import extract_cv_info
+from backend.src.config import settings
+from backend.src.utils.blob_storage import save_upload_local_or_blob, read_upload_file
+from backend.src.events.producer import publish_event
+from backend.src.events.schemas import EventEnvelope, EventType, Topics
 from backend.src.utils.security import (
     sanitize_input, validate_integer_id, validate_string_length,
     check_rate_limit
 )
 
 router = APIRouter(prefix="/applications", tags=["applications"])
+
+
+def _extract_cv_from_stored_path(cv_file_path: str, upload: UploadFile) -> dict:
+    """Parse CV after save — reads from Azure Blob when configured."""
+    raw = read_upload_file(cv_file_path)
+    if raw:
+        return extract_cv_info(BytesIO(raw)) or {}
+    upload.file.seek(0)
+    return extract_cv_info(upload.file) or {}
+
 
 # Create uploads directory for CVs (fallback to /tmp for serverless)
 try:
@@ -160,44 +175,64 @@ async def apply_for_job(
     if cv.size > 5 * 1024 * 1024:  # 5MB limit
         raise HTTPException(status_code=400, detail="CV file too large (max 5MB)")
     
-    # Save CV file
     safe_filename = f"{user_id}_{job_id}_{int(datetime.utcnow().timestamp())}.pdf"
-    cv_path = CV_UPLOAD_DIR / safe_filename
-    
-    with open(cv_path, "wb") as buffer:
-        shutil.copyfileobj(cv.file, buffer)
-    
-    cv_file_path = f"/uploads/cvs/{safe_filename}"
-    
-    # Extract information from CV
-    cv.file.seek(0)  # Reset file pointer
-    extracted_info = extract_cv_info(cv.file)
-    
-    # Sanitize cover letter
+    cv_file_path = save_upload_local_or_blob(CV_UPLOAD_DIR, safe_filename, cv.file, "cvs")
     cover_letter_clean = sanitize_input(cover_letter, max_length=2000) if cover_letter else None
-    
-    # Serialize extracted_info to JSON string if it's a dict
+
+    if settings.EVENTS_ENABLED:
+        application = models.JobApplication(
+            job_id=job_id,
+            user_id=user_id,
+            cover_letter=cover_letter_clean,
+            cv_file_path=cv_file_path,
+            cv_extracted_info=None,
+            status="pending",
+        )
+        db.add(application)
+        db.commit()
+        db.refresh(application)
+
+        publish_event(
+            Topics.APPLICATION,
+            EventEnvelope(
+                event_type=EventType.APPLICATION_SUBMITTED.value,
+                user_id=user_id,
+                payload={
+                    "application_id": application.id,
+                    "job_id": job_id,
+                    "cv_path": cv_file_path,
+                },
+            ),
+        )
+        return {
+            "application_id": application.id,
+            "status": "processing_cv",
+            "message": "Application received. CV is being processed in the background.",
+            "events_enabled": True,
+        }
+
+    extracted_info = _extract_cv_from_stored_path(cv_file_path, cv)
     cv_extracted_info_str = json.dumps(extracted_info) if extracted_info and isinstance(extracted_info, dict) else None
-    
-    # Create application
+
     application = models.JobApplication(
         job_id=job_id,
         user_id=user_id,
         cover_letter=cover_letter_clean,
         cv_file_path=cv_file_path,
         cv_extracted_info=cv_extracted_info_str,
-        status="pending"  # Waiting for admin approval
+        status="pending",
     )
-    
+
     db.add(application)
     db.commit()
     db.refresh(application)
-    
+
     return {
         "application_id": application.id,
         "status": application.status,
         "message": "Application submitted successfully. Waiting for admin approval.",
-        "extracted_info": extracted_info
+        "extracted_info": extracted_info,
+        "events_enabled": False,
     }
 
 

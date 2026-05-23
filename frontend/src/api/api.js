@@ -131,13 +131,24 @@ export const jobAPI = {
       query: params.query || null,
       employment_type: params.employment_type || null,
       remote_type: params.remote_type || null,
+      accessible_only: params.accessible_only || false,
     };
     return api.post('/jobs/search_jobs', payload);
   },
   getJob: (jobId) => api.get(`/jobs/${jobId}`),
   updateJob: (jobId, data) => api.put(`/jobs/${jobId}`, data),
   deleteJob: (jobId) => api.delete(`/jobs/${jobId}`),
-  getAllJobs: () => api.get('/jobs'),
+  getAllJobs: (params) => api.get('/jobs', { params }),
+  getAccessibleJobs: (params) => api.get('/jobs/accessible', { params }),
+  getImportStatus: (adminUserId) =>
+    api.get('/jobs/import/status', { params: { admin_user_id: adminUserId } }),
+  getImportDashboard: (adminUserId) =>
+    api.get('/jobs/import/dashboard', { params: { admin_user_id: adminUserId } }),
+  triggerImport: (adminUserId) => {
+    const form = new FormData();
+    form.append('admin_user_id', String(adminUserId));
+    return api.post('/jobs/import/trigger', form);
+  },
 };
 
 // Company endpoints
@@ -150,13 +161,33 @@ export const companyAPI = {
 };
 
 // Chat endpoint
+const EVENTS_ENABLED = import.meta.env.VITE_EVENTS_ENABLED === 'true';
+
 export const chatAPI = {
+  eventsEnabled: EVENTS_ENABLED,
   sendMessage: (data) => {
-    // Backend expects user_id and message as query params
     const params = new URLSearchParams();
     if (data.user_id) params.append('user_id', data.user_id);
     params.append('message', data.message);
     return api.post(`/chat/?${params.toString()}`);
+  },
+  sendMessageAsync: (data) => {
+    const params = new URLSearchParams();
+    if (data.user_id) params.append('user_id', data.user_id);
+    params.append('message', data.message);
+    return api.post(`/chat/async?${params.toString()}`);
+  },
+  getChatResult: (taskId) => api.get(`/chat/result/${taskId}`),
+  pollChatResult: async (taskId, { intervalMs = 1500, maxAttempts = 40 } = {}) => {
+    for (let i = 0; i < maxAttempts; i++) {
+      const res = await api.get(`/chat/result/${taskId}`);
+      const status = res.data?.status;
+      if (status === 'completed' || status === 'failed') {
+        return res.data;
+      }
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    throw new Error('Chat task timed out');
   },
   speechToText: (audioBlob) => {
     const formData = new FormData();
@@ -205,6 +236,10 @@ export const applicationAPI = {
     });
   },
   getApplication: (applicationId) => api.get(`/applications/${applicationId}`),
+};
+
+export const analyticsAPI = {
+  getSparkReport: () => api.get('/admin/analytics/spark'),
 };
 
 // Skills endpoints

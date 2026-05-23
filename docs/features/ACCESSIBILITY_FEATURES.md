@@ -6,12 +6,50 @@ The website has been enhanced with comprehensive accessibility features to make 
 
 ## 🎯 Key Features
 
-### 1. **Accessibility Controls Panel**
-- **Floating Button**: Always accessible button in bottom-right corner
-- **Font Size Control**: Increase/decrease font size (12px - 24px)
-- **High Contrast Mode**: Enhanced contrast for better visibility
-- **Reduce Motion**: Disables animations for users sensitive to motion
-- **Settings Persist**: Preferences saved in localStorage
+### 1. **EmpowerWork Accessibility Widget** (Daem-style grid)
+
+- **Floating button**: Bottom-right, opens the widget (`Alt+Shift+O`)
+- **Icon grid**: 10 feature tiles with keyboard shortcut badges
+- **Accessibility Profiles**: Vision, Hearing, Motor, Cognitive presets
+- **Reset / Close**: Header actions; settings persist in `localStorage` (`empowerwork_a11y_settings`)
+
+| Feature | Shortcut | Action |
+|---------|----------|--------|
+| Sign Lang Video | Alt+Shift+1 | Navigate to `/sign-language` |
+| ASL Fingerspell | Alt+Shift+2 | Site-wide letter + hand display (see below) |
+| Text to Speech | Alt+Shift+3 | Read selected text or focused element |
+| Speech to Text | Alt+Shift+4 | Open global STT panel (Groq via API) |
+| Color Contrast | Alt+Shift+C | Toggle high contrast |
+| Font Size | Alt+Shift+F | Cycle 16px → 28px |
+| Large Cursor | Alt+Shift+M | Toggle large cursor |
+| Line Height | Alt+Shift+L | Toggle increased line height |
+| Letter Spacing | Alt+Shift+S | Toggle letter spacing |
+| Readable Text | Alt+Shift+R | Toggle Atkinson Hyperlegible font |
+
+**Profiles:**
+
+- **Vision** — high contrast, larger font (20px), line height
+- **Hearing** — tip to use Sign Lang Video
+- **Motor** — large cursor, reduced motion
+- **Cognitive** — readable font, letter spacing, line height, reduced motion
+
+**Files:** `frontend/src/components/AccessibilityControls.jsx`, `AccessibilitySpeechPanel.jsx`, `frontend/src/hooks/useAccessibilityShortcuts.js`, `frontend/src/utils/accessibility.js`, `frontend/src/utils/aslFingerspell.js`
+
+#### ASL Fingerspell mode (Sign Lang Font tile)
+
+When **ASL Fingerspell** is enabled:
+
+- Text inside `<main>` is transformed so each **English letter (A–Z)** shows as a **Latin letter on top** and an **ASL hand SVG below** (NTI-style fingerspelling).
+- Hand glyphs live in `frontend/public/asl-fingerspell/` (see `ATTRIBUTION.md`):
+  - **11 letters** (A, C, E, I, L, M, N, O, S, T, U) cropped from the NTI banner (`source/nti-banner.png`).
+  - **15 letters** (B, D, F, G, H, J, K, P, Q, R, V, W, X, Y, Z) from Wikimedia Commons ASL line-art (`Sign language *.svg`), processed to match banner ink and size.
+- Regenerate assets: `pip install pillow` then `python frontend/scripts/generate_asl_svgs.py`.
+- Toggle off restores original text without reloading the page.
+- **Not processed:** accessibility widget, form inputs, `code` blocks, nav/footer outside `main`.
+- **Numbers and punctuation** stay as normal characters (no hand image).
+- **Arabic and other scripts** are unchanged.
+- A **MutationObserver** re-applies the view when React updates page content.
+- Optional **Gallaudet** web font is loaded as a fallback layer via CSS.
 
 ### 2. **Keyboard Navigation**
 - **Tab Navigation**: All interactive elements accessible via keyboard
@@ -31,7 +69,7 @@ The website has been enhanced with comprehensive accessibility features to make 
 - **High Contrast Mode**: Enhanced borders and contrast
 - **Focus Rings**: 2-3px focus rings on all interactive elements
 - **Color Contrast**: WCAG AA compliant color combinations
-- **Font Size**: Adjustable from 12px to 24px
+- **Font Size**: Adjustable from 12px to 28px (widget)
 - **Reduced Motion**: Respects prefers-reduced-motion preference
 
 ### 5. **Form Accessibility**
@@ -90,9 +128,10 @@ The website has been enhanced with comprehensive accessibility features to make 
 
 ### For Users
 
-1. **Access Accessibility Controls**:
-   - Click the settings icon (⚙️) in bottom-right corner
-   - Adjust font size, contrast, and motion settings
+1. **Access Accessibility Widget**:
+   - Click the accessibility icon in the bottom-right corner, or press `Alt+Shift+O`
+   - Choose a profile or tap feature tiles
+   - Use `Reset` to restore defaults
 
 2. **Keyboard Navigation**:
    - Press `Tab` to move between elements
@@ -176,9 +215,11 @@ The website has been enhanced with comprehensive accessibility features to make 
 
 ### Future Enhancements
 - [ ] Voice navigation support
-- [ ] Sign language video support
-- [ ] Customizable color schemes
-- [ ] Text-to-speech integration
+- [x] Sign language video page (`/sign-language`)
+- [x] ASL fingerspell site-wide display (letter + hand per character)
+- [ ] Customizable color schemes beyond high contrast
+- [x] Text-to-speech (browser + widget)
+- [x] Speech-to-text (widget panel + chat)
 - [ ] Gesture navigation
 - [ ] Eye tracking support
 
@@ -198,7 +239,7 @@ The website has been enhanced with comprehensive accessibility features to make 
 ## ✅ Summary
 
 The website is now highly accessible with:
-- ✅ Accessibility controls panel
+- ✅ EmpowerWork accessibility widget (grid + shortcuts + profiles)
 - ✅ Full keyboard navigation
 - ✅ Screen reader support
 - ✅ High contrast mode

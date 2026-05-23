@@ -4,10 +4,10 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-import shutil
 from pathlib import Path
 
 from backend.src.db.database import get_db
+from backend.src.utils.blob_storage import save_upload_local_or_blob
 from backend.src.db import models
 from backend.src.utils.security import (
     sanitize_input, validate_email, validate_name, validate_phone,
@@ -92,10 +92,7 @@ async def add_user(
     if photo:
         file_ext = os.path.splitext(photo.filename)[1]
         safe_filename = f"{email}_{int(os.urandom(4).hex(), 16)}{file_ext}"
-        photo_path = str(UPLOAD_DIR / safe_filename)
-        with open(photo_path, "wb") as buffer:
-            shutil.copyfileobj(photo.file, buffer)
-        photo_path = f"/uploads/profiles/{safe_filename}"
+        photo_path = save_upload_local_or_blob(UPLOAD_DIR, safe_filename, photo.file, "profiles")
     
     # Parse disabilities and skills
     disability_ids = []
@@ -278,10 +275,7 @@ async def update_user(
         
         file_ext = os.path.splitext(photo.filename)[1]
         safe_filename = f"{user.email}_{int(os.urandom(4).hex(), 16)}{file_ext}"
-        photo_path = str(UPLOAD_DIR / safe_filename)
-        with open(photo_path, "wb") as buffer:
-            shutil.copyfileobj(photo.file, buffer)
-        user.photo = f"/uploads/profiles/{safe_filename}"
+        user.photo = save_upload_local_or_blob(UPLOAD_DIR, safe_filename, photo.file, "profiles")
     
     # Update disabilities
     if disabilities is not None:

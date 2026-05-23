@@ -1,0 +1,32 @@
+# Job board connectors — Egypt software/IT focus
+# Schedule: every 8 hours (see pipeline.yaml + Airflow DAG)
+
+sources:
+  wuzzuf:
+    enabled: true
+    display_name: "Wuzzuf"
+    max_jobs_per_run: 80
+    list_pages: 4
+    page_size: 15
+    base_url: "https://wuzzuf.net"
+    # Uses search_queries from software_filters.yaml
+
+  forasna:
+    enabled: true
+    display_name: "Forasna"
+    max_jobs_per_run: 60
+    list_pages: 4
+    base_url: "https://forasna.com"
+    listing_path: "/jobs/egypt?category=it"
+
+  linkedin:
+    enabled: true
+    display_name: "LinkedIn"
+    max_jobs_per_run: 50
+    list_pages: 5
+    page_size: 25
+    location: "Egypt"
+    legal_warning: >
+      Uses LinkedIn guest API (public listings). May break if LinkedIn changes
+      their site. For production/commercial use review LinkedIn Terms of Service.
+    base_url: "https://www.linkedin.com"

@@ -69,6 +69,119 @@
   transition-duration: 0.01ms !important;
 }
 
+/* EmpowerWork accessibility widget classes */
+.a11y-line-height,
+.a11y-line-height body {
+  line-height: 1.85 !important;
+}
+
+.a11y-letter-spacing,
+.a11y-letter-spacing body {
+  letter-spacing: 0.08em !important;
+}
+
+.a11y-readable-font,
+.a11y-readable-font body {
+  font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, Segoe UI, sans-serif !important;
+}
+
+/* ASL fingerspell mode (Sign Lang Font toggle) */
+.a11y-asl-fingerspell,
+.a11y-asl-fingerspell body {
+  font-family: 'Gallaudet', 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+
+.a11y-asl-fingerspell main {
+  line-height: 3.2;
+  word-spacing: 0.2em;
+}
+
+.asl-processed {
+  display: inline;
+  white-space: pre-wrap;
+}
+
+.asl-unit {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  vertical-align: bottom;
+  margin: 0 0.12em 0.2em;
+  min-width: 2.75em;
+  line-height: 1;
+}
+
+.asl-latin {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 0.55em;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.1;
+  color: #111;
+}
+
+.asl-hand {
+  display: block;
+  height: 3.75em;
+  width: auto;
+  min-width: 2.5em;
+  max-width: 4.25em;
+  margin-top: 0.15em;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  user-select: none;
+}
+
+.a11y-high-contrast .asl-hand {
+  filter: contrast(1.25);
+}
+
+.asl-plain-char {
+  display: inline;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85em;
+  vertical-align: bottom;
+}
+
+.asl-space {
+  display: inline-block;
+  width: 0.45em;
+}
+
+@font-face {
+  font-family: 'Gallaudet';
+  src: url('https://fonts.cdnfonts.com/s/59281/Gallaudet.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.a11y-large-cursor,
+.a11y-large-cursor * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath fill='%23000' stroke='%23fff' stroke-width='1' d='M4 4 L4 26 L12 20 L18 28 L22 26 L16 18 L26 18 Z'/%3E%3C/svg%3E") 2 2, auto !important;
+}
+
+.a11y-large-cursor *:focus-visible {
+  outline-width: 3px !important;
+  outline-offset: 3px !important;
+}
+
+/* Accessibility widget panel */
+.a11y-widget-tile {
+  @apply flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-3 text-center transition-colors hover:border-accent hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-accent;
+}
+
+.a11y-widget-tile-active {
+  @apply border-accent bg-teal-50 ring-1 ring-accent;
+}
+
+.a11y-shortcut-badge {
+  @apply absolute right-1.5 top-1.5 rounded bg-gray-100 px-1 py-0.5 text-[10px] font-medium text-gray-500;
+}
+
 /* Accessibility: Focus Styles */
 *:focus-visible {
   outline: 2px solid theme('colors.accent');

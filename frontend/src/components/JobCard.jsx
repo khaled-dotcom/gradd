@@ -1,10 +1,35 @@
-import { MapPin, Building2, DollarSign, Clock, ExternalLink } from 'lucide-react';
+import { MapPin, Building2, DollarSign, Clock } from 'lucide-react';
+
+const SOURCE_LABELS = {
+  wuzzuf: 'Wuzzuf',
+  forasna: 'Forasna',
+  linkedin: 'LinkedIn',
+};
 
 const JobCard = ({ job, onApply }) => {
+  const sourceLabel = job.source ? SOURCE_LABELS[job.source] || job.source : null;
+
   return (
     <div className="card hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
         <div>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {job.is_accessible_focus && (
+              <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs rounded-full font-medium">
+                Accessible focus
+              </span>
+            )}
+            {sourceLabel && (
+              <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-full">
+                via {sourceLabel}
+              </span>
+            )}
+            {job.is_active === false && (
+              <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900 text-red-800 text-xs rounded-full">
+                Closed
+              </span>
+            )}
+          </div>
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             {job.title}
           </h3>
@@ -65,27 +90,31 @@ const JobCard = ({ job, onApply }) => {
         </div>
       )}
 
-      <div className="flex justify-between items-center">
-        {job.application_url ? (
-          <a
-            href={job.application_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary flex items-center space-x-2"
-          >
-            <span>Apply Now</span>
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        ) : (
-          <button 
-            onClick={() => onApply && onApply(job)} 
-            className="btn-primary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-            aria-label={`Apply for ${job.title} position`}
-          >
-            Apply
-          </button>
-        )}
-        <button 
+      {job.disability_support && job.disability_support.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {job.disability_support.map((d, idx) => (
+            <span
+              key={idx}
+              className="px-2 py-1 bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-200 text-xs rounded-full"
+            >
+              {d}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="flex justify-between items-center gap-4">
+        <button
+          type="button"
+          onClick={() => onApply && onApply(job)}
+          disabled={job.is_active === false}
+          className="btn-primary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50"
+          aria-label={`Apply for ${job.title} on EmpowerWork`}
+        >
+          Apply on EmpowerWork
+        </button>
+        <button
+          type="button"
           className="text-accent hover:underline text-sm focus:outline-none focus:ring-2 focus:ring-accent rounded"
           aria-label={`View details for ${job.title}`}
         >

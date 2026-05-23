@@ -1,5 +1,9 @@
-import cv2
 import base64
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 import time
 from groq import Groq
 import os
@@ -17,6 +21,8 @@ class ActionRecognitionSystem:
         
     def frame_to_base64(self, frame):
         """Convert OpenCV frame to base64 string"""
+        if cv2 is None:
+            raise RuntimeError("opencv-python-headless is not installed")
         _, buffer = cv2.imencode('.jpg', frame)
         frame_base64 = base64.b64encode(buffer).decode('utf-8')
         return frame_base64

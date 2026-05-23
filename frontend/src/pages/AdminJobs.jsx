@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Table from '../components/Table';
 import JobForm from '../components/JobForm';
 import { jobAPI } from '../api/api';
 import { handleAPIError } from '../api/api';
 import toast from 'react-hot-toast';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, RefreshCw, Database, Briefcase, FileText } from 'lucide-react';
 
 const AdminJobs = () => {
   const { user, isAdmin } = useAuth();
@@ -15,6 +15,9 @@ const AdminJobs = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
+  const [importStatus, setImportStatus] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [importLoading, setImportLoading] = useState(false);
 
   useEffect(() => {
     if (!user || !isAdmin()) {
@@ -22,13 +25,48 @@ const AdminJobs = () => {
       return;
     }
     fetchJobs();
+    fetchImportData();
   }, [user, isAdmin, navigate]);
 
+  const fetchImportData = async () => {
+    if (!user?.id) return;
+    try {
+      const [statusRes, dashRes] = await Promise.all([
+        jobAPI.getImportStatus(user.id),
+        jobAPI.getImportDashboard(user.id),
+      ]);
+      setImportStatus(statusRes.data);
+      setDashboard(dashRes.data);
+    } catch {
+      setImportStatus(null);
+      setDashboard(null);
+    }
+  };
+
+  const handleTriggerImport = async () => {
+    if (!user?.id) return;
+    setImportLoading(true);
+    try {
+      await jobAPI.triggerImport(user.id);
+      toast.success('Job import pipeline started (admin only)');
+      setTimeout(fetchImportData, 5000);
+    } catch (error) {
+      handleAPIError(error);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const fetchJobs = async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
-      const response = await jobAPI.getAllJobs();
-      setJobs(response.data || []);
+      const response = await jobAPI.getAllJobs({
+        active_only: false,
+        admin_user_id: user.id,
+        limit: 200,
+      });
+      setJobs(response.data?.results || []);
     } catch (error) {
       handleAPIError(error);
     } finally {
@@ -86,22 +124,31 @@ const AdminJobs = () => {
           : '-',
     },
     {
-      key: 'employment_type',
-      label: 'Type',
-      render: (value) => (value ? value.replace('-', ' ') : '-'),
+      key: 'source',
+      label: 'Source',
+      render: (value) => value || 'manual',
     },
     {
-      key: 'remote_type',
-      label: 'Remote',
-      render: (value) => (value === 'remote' ? 'Yes' : 'No'),
+      key: 'source_url',
+      label: 'External URL',
+      render: (value) =>
+        value ? (
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent text-xs truncate max-w-[120px] inline-block"
+          >
+            audit
+          </a>
+        ) : (
+          '—'
+        ),
     },
     {
-      key: 'salary_min',
-      label: 'Salary',
-      render: (value, row) =>
-        value
-          ? `$${value}${row.salary_max ? ` - $${row.salary_max}` : '+'}`
-          : '-',
+      key: 'is_active',
+      label: 'Active',
+      render: (value) => (value !== false ? 'Yes' : 'No'),
     },
   ];
 
@@ -125,7 +172,7 @@ const AdminJobs = () => {
               Manage Jobs
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Add, edit, and delete job listings
+              استيراد يدوي (أدمن فقط) · تحديث تلقائي كل 8 ساعات عبر Airflow
             </p>
           </div>
           <button
@@ -138,6 +185,69 @@ const AdminJobs = () => {
             <Plus className="h-4 w-4" />
             <span>Add Job</span>
           </button>
+        </div>
+
+        {dashboard && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="card">
+              <Briefcase className="h-5 w-5 text-accent mb-2" />
+              <p className="text-sm text-gray-500">وظائف نشطة</p>
+              <p className="text-2xl font-bold">{dashboard.total_active_jobs}</p>
+            </div>
+            <div className="card">
+              <FileText className="h-5 w-5 text-accent mb-2" />
+              <p className="text-sm text-gray-500">طلبات على موقعنا</p>
+              <p className="text-2xl font-bold">{dashboard.total_applications}</p>
+              <p className="text-xs text-gray-500">
+                {dashboard.pending_applications} pending
+              </p>
+            </div>
+            <div className="card col-span-1 sm:col-span-2">
+              <p className="text-sm text-gray-500 mb-1">حسب المصدر</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                {Object.entries(dashboard.jobs_by_source || {})
+                  .map(([k, v]) => `${k}: ${v}`)
+                  .join(' · ') || '—'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="card mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Database className="h-6 w-6 text-accent mt-1" />
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  استيراد وظائف السوفتوير (Wuzzuf · Forasna · LinkedIn)
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  التحديث التلقائي: كل 8 ساعات (Airflow). الزر أدناه للأدمن فقط.
+                </p>
+                {importStatus && importStatus.status !== 'no_runs' && (
+                  <p className="text-sm mt-2 text-gray-700 dark:text-gray-300">
+                    آخر تشغيل: <strong>{importStatus.status}</strong>
+                    {importStatus.added != null && ` · +${importStatus.added}`}
+                    {importStatus.updated != null && ` · ${importStatus.updated} محدّث`}
+                    {importStatus.finished_at &&
+                      ` · ${new Date(importStatus.finished_at).toLocaleString()}`}
+                  </p>
+                )}
+                <Link to="/how-it-works" className="text-sm text-accent hover:underline mt-1 inline-block">
+                  كيف يعمل التقديم على الموقع؟
+                </Link>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleTriggerImport}
+              disabled={importLoading}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${importLoading ? 'animate-spin' : ''}`} />
+              Run import now (admin)
+            </button>
+          </div>
         </div>
 
         {showForm && (
@@ -181,4 +291,3 @@ const AdminJobs = () => {
 };
 
 export default AdminJobs;
-

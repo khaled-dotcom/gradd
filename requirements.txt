@@ -1,8 +1,20 @@
-streamlit
-streamlit-webrtc
-mediapipe==0.10.11
-opencv-python-headless
-numpy
-scikit-learn
-joblib
+fastapi
+uvicorn[standard]
+gunicorn
+sqlalchemy
+pymysql
 python-dotenv
+openai
+# chromadb optional on Azure (heavy); RAG uses MySQL without vectors if missing
+
+groq
+werkzeug
+python-multipart
+PyPDF2
+cryptography
+reportlab
+redis
+pandas
+pyarrow
+pyyaml
+azure-storage-blob

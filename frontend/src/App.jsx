@@ -20,6 +20,8 @@ import Tools from './pages/Tools';
 import CVGenerator from './pages/CVGenerator';
 import ActionRecognition from './pages/ActionRecognition';
 import SignLanguageTranslator from './pages/SignLanguageTranslator';
+import AccessibleJobs from './pages/AccessibleJobs';
+import HowItWorks from './pages/HowItWorks';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -64,6 +66,11 @@ function App() {
             </a>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route
+                path="/accessible-jobs"
+                element={<AccessibleJobs />}
+              />
+              <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route

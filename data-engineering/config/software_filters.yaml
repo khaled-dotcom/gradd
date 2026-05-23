@@ -1,0 +1,58 @@
+# Software / IT job filter — applied in Silver→Gold and at connector level
+enabled: true
+
+# Title or description must match at least one keyword (case-insensitive)
+title_keywords:
+  - software
+  - developer
+  - programmer
+  - engineer
+  - devops
+  - backend
+  - frontend
+  - full stack
+  - fullstack
+  - mobile
+  - android
+  - ios
+  - python
+  - java
+  - javascript
+  - react
+  - node
+  - .net
+  - data engineer
+  - machine learning
+  - ml engineer
+  - ai engineer
+  - cloud
+  - aws
+  - azure
+  - qa engineer
+  - test automation
+  - sre
+  - مطور
+  - برمجة
+  - سوفت وير
+  - مهندس برمجيات
+  - تطوير
+
+# Optional: exclude non-IT roles that sometimes match loosely
+exclude_keywords:
+  - sales representative software
+  - software sales only
+
+# Search queries per source (used in listing URLs)
+search_queries:
+  wuzzuf:
+    - software
+    - python developer
+    - frontend developer
+    - backend developer
+  forasna:
+    - category=it
+  linkedin:
+    - software engineer
+    - python developer
+    - frontend developer
+    - devops engineer

@@ -2,6 +2,9 @@ from typing import Optional, List, Dict
 from groq import Groq
 
 from backend.src.config import settings
+from backend.src.rag.embedder import get_embedding
+from backend.src.rag.retriever import search_chroma
+from backend.src.services.chat_context import format_cv_context
 
 
 SYSTEM_PROMPT = """You are a helpful job assistant for people with disabilities. 
@@ -15,6 +18,7 @@ CRITICAL RESPONSE FORMAT:
 - SHORT SENTENCES - Maximum 15-20 words per sentence
 
 IMPORTANT GUIDELINES:
+- Use USER CV DATA from the database when answering about skills, experience, or profile
 - Prioritize jobs that support the user's specific disabilities
 - Consider the user's application history - don't recommend jobs they've already applied to (unless they ask)
 - Match jobs to user's skills and preferences
@@ -68,12 +72,37 @@ Disability Support: {', '.join(disability_support[:3]) if disability_support els
     return "\n".join(job_list)
 
 
+def _boost_jobs_from_chroma(message: str, jobs_data: Optional[List[Dict]]) -> Optional[List[Dict]]:
+    """Prepend vector-search hits when ChromaDB is indexed (job.events worker)."""
+    if not jobs_data or not settings.OPENAI_API_KEY:
+        return jobs_data
+    try:
+        query_emb = get_embedding(message[:2000])
+        hits = search_chroma(query_emb, n_results=5)
+        if not hits or not hits.get("ids") or not hits["ids"][0]:
+            return jobs_data
+        hit_ids = set()
+        for raw_id in hits["ids"][0]:
+            if raw_id.startswith("job_"):
+                hit_ids.add(int(raw_id.replace("job_", "")))
+        if not hit_ids:
+            return jobs_data
+        by_id = {j["id"]: j for j in jobs_data}
+        boosted = [by_id[jid] for jid in hit_ids if jid in by_id]
+        rest = [j for j in jobs_data if j["id"] not in hit_ids]
+        return boosted + rest
+    except Exception:
+        return jobs_data
+
+
 def chat_with_rag(message: str, user_profile: Optional[dict], jobs_data: Optional[List[Dict]] = None) -> str:
     """
     Chat with Groq AI assistant with access to job database.
     """
     if not settings.GROQ_API_KEY:
         return "GROQ_API_KEY is not configured. Please set it in your .env file."
+
+    jobs_data = _boost_jobs_from_chroma(message, jobs_data)
 
     try:
         # Build context from user profile if available
@@ -99,6 +128,13 @@ def chat_with_rag(message: str, user_profile: Optional[dict], jobs_data: Optiona
                 context_parts.append(f"User location: {user_profile['location']}")
             if user_profile.get("preferred_job_type"):
                 context_parts.append(f"Preferred job type: {user_profile['preferred_job_type']}")
+
+            cv_block = format_cv_context(user_profile.get("cv_summaries") or [])
+            if cv_block:
+                context_parts.append(
+                    "USER CV DATA (from database; PDF files stored on Azure, parsed fields below):\n"
+                    + cv_block
+                )
         
         # Add jobs database context (only relevant jobs are passed)
         user_disabilities = user_profile.get("disabilities") if user_profile else None

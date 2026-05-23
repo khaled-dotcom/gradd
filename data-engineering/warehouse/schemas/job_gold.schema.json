@@ -1,0 +1,20 @@
+{
+  "title": "JobGold",
+  "type": "object",
+  "required": ["source", "external_id", "title", "content_hash"],
+  "properties": {
+    "source": { "type": "string" },
+    "external_id": { "type": "string" },
+    "source_url": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "company_name": { "type": "string" },
+    "city": { "type": "string" },
+    "country": { "type": "string" },
+    "employment_type": { "enum": ["full-time", "part-time", "contract", "internship"] },
+    "remote_type": { "enum": ["remote", "on-site", "hybrid"] },
+    "content_hash": { "type": "string" },
+    "is_accessible_focus": { "type": "boolean" },
+    "is_active": { "type": "boolean" }
+  }
+}

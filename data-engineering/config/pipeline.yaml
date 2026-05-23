@@ -1,0 +1,7 @@
+# Airflow / cron: every 8 hours (00:00, 08:00, 16:00 UTC)
+schedule_cron: "0 */8 * * *"
+grace_hours_missing: 48
+default_country: "Egypt"
+lake_root: "data/lake/jobs"
+spark_master: "local[*]"
+software_filter_enabled: true

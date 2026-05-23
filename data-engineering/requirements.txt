@@ -1,0 +1,8 @@
+apache-airflow==2.9.3
+pyspark==3.5.3
+pandas
+pyarrow
+pyyaml
+beautifulsoup4
+requests
+httpx

@@ -9,11 +9,15 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 from reportlab.lib.utils import simpleSplit
 
+from backend.src.config import settings
+
 router = APIRouter(prefix="/cv", tags=["cv"])
 
-# Initialize Groq client
-# The model uses the GROQ_API_KEY from environment variables as set up in the system
-client = Groq()
+
+def _groq_client():
+    if not settings.GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not configured.")
+    return Groq(api_key=settings.GROQ_API_KEY)
 
 @router.post("/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)):
@@ -24,7 +28,7 @@ async def transcribe_audio(file: UploadFile = File(...)):
         
         # Call Groq API for transcription
         # Using whisper-large-v3-turbo for fast transcription
-        transcription = client.audio.transcriptions.create(
+        transcription = _groq_client().audio.transcriptions.create(
             file=(file.filename, file_bytes),
             model="whisper-large-v3-turbo",
         )
@@ -75,7 +79,7 @@ Skills:
 """
         
         # Call Groq AI
-        completion = client.chat.completions.create(
+        completion = _groq_client().chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": cv_prompt}],
             temperature=0.4,
